@@ -1,27 +1,18 @@
 name: Deploy
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    
-    env:
-      SSH_KEY: ${{secrets.SSH_KEY}}
-
     steps:
     - uses: actions/checkout@v2
-    - name: Use Node.js 16
-      uses: actions/setup-node@v2
+    - name: rsync deployments
+      uses: burnett01/rsync-deployments@5.2.1
       with:
-        node-version: 16
-        cache: 'yarn'
-    - run: yarn install
-    - run: yarn build
-    - run: mkdir ~/.ssh
-    - run: 'echo "$SSH_KEY" >> ~/.ssh/github-action'
-    - run: chmod 400 ~/.ssh/github-action
-    - run: echo -e "Host github-actions\n\tUser github-actions\n\tHostname 145.239.253.165\n\tIdentityFile ~/.ssh/github-action\n\tStrictHostKeyChecking No" >> ~/.ssh/config
-    - run: rsync -e ssh public github-actions-tutorial:~/static
-    - run: rsync -e ssh built/app.js github-actions-tutorial:~/static/js/app.js
-    - run: ssh github-actions-tutorial "pm2 reload all"
+        switches: -avzr --delete
+        path: /
+        remote_path: /var/www/slow_server/
+        remote_host: 145.239.253.165
+        remote_user: mark
+        remote_key: ${{ secrets.SSH_KEY }}
